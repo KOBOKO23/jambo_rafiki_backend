@@ -1,0 +1,51 @@
+# =====================
+# Python / Django
+# =====================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# Django stuff
+*.sqlite3
+db.sqlite3
+local_settings.py
+.env
+.env.*
+
+# Migrations cache
+**/migrations/__pycache__/
+
+# =====================
+# Virtual Environments
+# =====================
+venv/
+.venv/
+env/
+
+# =====================
+# Media & Uploads
+# =====================
+media/
+
+# =====================
+# Static files (if collected)
+# =====================
+staticfiles/
+static/
+
+# =====================
+# OS / Editor junk
+# =====================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# =====================
+# Node / frontend junk (if any)
+# =====================
+node_modules/
+dist/
+build/
