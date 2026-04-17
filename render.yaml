@@ -109,7 +109,7 @@ services:
       - key: SECURITY_LOG_LEVEL
         value: WARNING
       - key: SECRET_KEY
-        sync: false
+        generateValue: true
       - key: DATABASE_URL
         fromDatabase:
           name: jambo-rafiki-postgres
