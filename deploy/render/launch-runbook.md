@@ -4,7 +4,6 @@
 
 1. Confirm all required environment variables are set on both web and worker.
 2. Confirm PostgreSQL is reachable from the web service.
-3. Confirm S3 bucket exists if `USE_S3_MEDIA=True`.
 4. Confirm M-Pesa callback URL points to your Render web hostname.
 
 ## Deploy

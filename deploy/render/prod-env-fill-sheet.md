@@ -34,16 +34,11 @@ Fill this before setting Render environment variables.
 | ADMIN_EMAIL | Yes | |
 | ADMIN_NOTIFICATION_EMAILS | Yes | benjaminoyoo182@gmail.com,infodirector@jamborafiki.org,inforinternationaldirector@jamborafiki.org,email@jamborafiki.org |
 
-## Media (S3)
+## Media
 
 | Variable | Required | Value |
 |---|---|---|
-| USE_S3_MEDIA | Recommended | True |
-| AWS_STORAGE_BUCKET_NAME | If USE_S3_MEDIA=True | |
-| AWS_S3_REGION_NAME | If USE_S3_MEDIA=True | us-east-1 |
-| AWS_MEDIA_LOCATION | If USE_S3_MEDIA=True | media |
-| AWS_S3_CUSTOM_DOMAIN | Optional | |
-| AWS_MEDIA_CACHE_CONTROL | Optional | max-age=86400 |
+| USE_S3_MEDIA | Yes | False |
 
 ## Payments
 
