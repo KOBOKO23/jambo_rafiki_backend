@@ -15,7 +15,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DEBUG = config('DEBUG', default=True, cast=bool)
 DJANGO_ENV = config('DJANGO_ENV', default='development').lower().strip()
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
+_raw_allowed_hosts = config('ALLOWED_HOSTS', default='', cast=Csv())
+ALLOWED_HOSTS = [host.strip() for host in _raw_allowed_hosts if (host or '').strip()]
 
 if DJANGO_ENV == 'production':
     if DEBUG:

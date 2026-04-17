@@ -40,13 +40,14 @@ Verification note:
 
 Goal: ensure production settings are safe and complete.
 
-- [ ] DEBUG is false in production.
-- [ ] ALLOWED_HOSTS contains only valid production hosts.
-- [ ] SECRET_KEY is injected from secure environment.
+- [*] DEBUG is enforced false in production mode (fail-fast if true).
+- [*] ALLOWED_HOSTS is required and rejects empty values in production mode.
+- [*] SECRET_KEY is required in production mode.
 - [*] CORS_ALLOWED_ORIGINS includes the deployed frontend origin.
 - [*] CSRF_TRUSTED_ORIGINS includes the deployed frontend origin.
 - [ ] DATABASE_URL points to production database.
-- [ ] EMAIL_BACKEND and SMTP/provider credentials are configured.
+- [*] EMAIL_BACKEND is required in production mode.
+- [ ] SMTP/provider credentials are configured for production mail.
 - [ ] USE_S3_MEDIA is enabled if durable media hosting is required.
 - [ ] S3 bucket/domain settings are configured correctly.
 - [ ] SENTRY_DSN (or equivalent) is configured.
@@ -58,6 +59,11 @@ Current note:
 - Frontend/admin origin used for backend config: https://jamborafiki.vercel.app.
 - Backend settings now default `FRONTEND_URL` to that origin and derive CORS defaults from it.
 - Deploy env matrix has been aligned for production `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS`, and `CSRF_TRUSTED_ORIGINS`.
+- Production guardrails validated with explicit checks:
+	- `DJANGO_ENV=production DEBUG=True ... manage.py check` fails as expected.
+	- `DJANGO_ENV=production ALLOWED_HOSTS= ... manage.py check` fails as expected.
+	- `DJANGO_ENV=production SECRET_KEY= ... manage.py check` fails as expected.
+	- `DJANGO_ENV=production EMAIL_BACKEND= ... manage.py check` fails as expected.
 
 ## 3) Security Readiness
 
