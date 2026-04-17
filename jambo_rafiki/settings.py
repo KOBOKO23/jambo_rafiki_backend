@@ -205,11 +205,26 @@ REST_FRAMEWORK = {
 }
 
 # CORS Configuration
-CORS_ALLOWED_ORIGINS = config(
-    'CORS_ALLOWED_ORIGINS',
-    default='http://localhost:5173,http://localhost:3000',
-    cast=Csv()
-)
+# Frontend URL
+FRONTEND_URL = config('FRONTEND_URL', default='https://jamborafiki.vercel.app')
+
+_configured_cors_origins = config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
+if _configured_cors_origins:
+    CORS_ALLOWED_ORIGINS = [origin.strip().rstrip('/') for origin in _configured_cors_origins if origin]
+else:
+    # If not explicitly configured, trust the primary frontend origin by default.
+    CORS_ALLOWED_ORIGINS = [FRONTEND_URL.rstrip('/')]
+
+if DEBUG:
+    for dev_origin in [
+        'http://localhost:5173',
+        'http://127.0.0.1:5173',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+    ]:
+        normalized = dev_origin.rstrip('/')
+        if normalized not in CORS_ALLOWED_ORIGINS:
+            CORS_ALLOWED_ORIGINS.append(normalized)
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -282,9 +297,6 @@ PAYPAL_CLIENT_ID = config('PAYPAL_CLIENT_ID', default='')
 PAYPAL_CLIENT_SECRET = config('PAYPAL_CLIENT_SECRET', default='')
 PAYPAL_MODE = config('PAYPAL_MODE', default='sandbox')
 
-# Frontend URL
-FRONTEND_URL = config('FRONTEND_URL', default='http://localhost:5173')
-
 # Security Settings (Production)
 if not DEBUG:
     SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
@@ -302,6 +314,10 @@ if not DEBUG:
 
 _trusted_origins = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 CSRF_TRUSTED_ORIGINS = [origin.strip().rstrip('/') for origin in _trusted_origins if origin]
+
+frontend_origin = FRONTEND_URL.strip().rstrip('/')
+if frontend_origin and frontend_origin not in CSRF_TRUSTED_ORIGINS:
+    CSRF_TRUSTED_ORIGINS.append(frontend_origin)
 
 if DEBUG:
     # Make local SPA/dev-server origins work out-of-the-box for CSRF-protected writes.

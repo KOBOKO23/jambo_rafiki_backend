@@ -7,9 +7,9 @@
 | DJANGO_ENV | staging | production | Must be production in live env |
 | DEBUG | False | False | Never True in hosted env |
 | ALLOWED_HOSTS | api-staging.yourdomain.com | api.yourdomain.com | Comma-separated allowed |
-| FRONTEND_URL | https://staging.yourdomain.com | https://app.yourdomain.com | Used in emails and links |
-| CORS_ALLOWED_ORIGINS | https://staging.yourdomain.com | https://app.yourdomain.com | Comma-separated |
-| CSRF_TRUSTED_ORIGINS | https://staging.yourdomain.com,https://api-staging.yourdomain.com | https://app.yourdomain.com,https://api.yourdomain.com | Include https scheme |
+| FRONTEND_URL | https://staging.yourdomain.com | https://jamborafiki.vercel.app | Used in emails and links |
+| CORS_ALLOWED_ORIGINS | https://staging.yourdomain.com | https://jamborafiki.vercel.app | Comma-separated |
+| CSRF_TRUSTED_ORIGINS | https://staging.yourdomain.com,https://api-staging.yourdomain.com | https://jamborafiki.vercel.app,https://api.yourdomain.com | Include https scheme |
 
 ## Media Storage (S3)
 
