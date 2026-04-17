@@ -45,9 +45,11 @@ Goal: ensure production settings are safe and complete.
 - [*] SECRET_KEY is required in production mode.
 - [*] CORS_ALLOWED_ORIGINS includes the deployed frontend origin.
 - [*] CSRF_TRUSTED_ORIGINS includes the deployed frontend origin.
-- [ ] DATABASE_URL points to production database.
+- [*] ADMIN_NOTIFICATION_EMAILS routes admin mail to the shared recipient list.
+- [*] DATABASE_URL points to production database.
 - [*] EMAIL_BACKEND is required in production mode.
-- [ ] SMTP/provider credentials are configured for production mail.
+- [*] SMTP/provider credentials are validated when an SMTP backend is selected.
+- [ ] SMTP/provider credentials are configured with real production values.
 - [ ] USE_S3_MEDIA is enabled if durable media hosting is required.
 - [ ] S3 bucket/domain settings are configured correctly.
 - [ ] SENTRY_DSN (or equivalent) is configured.
@@ -59,13 +61,17 @@ Definition of done:
 Current note:
 - Frontend/admin origin used for backend config: https://jamborafiki.vercel.app.
 - Backend settings now default `FRONTEND_URL` to that origin and derive CORS defaults from it.
+- Admin notification mail now uses the shared recipient list: benjaminoyoo182@gmail.com, infodirector@jamborafiki.org, inforinternationaldirector@jamborafiki.org, email@jamborafiki.org.
+- SMTP mail now fails fast in production unless host/user/password are present for SMTP backends.
+- Production database config now fails fast unless DATABASE_URL points to a non-SQLite database in production.
 - Deploy env matrix has been aligned for production `FRONTEND_URL`, `CORS_ALLOWED_ORIGINS`, and `CSRF_TRUSTED_ORIGINS`.
+- Remaining deployment-only tasks are documented in [production_remaining_implementation_guide.md](production_remaining_implementation_guide.md).
 - Production guardrails validated with explicit checks:
 	- `DJANGO_ENV=production DEBUG=True ... manage.py check` fails as expected.
 	- `DJANGO_ENV=production ALLOWED_HOSTS= ... manage.py check` fails as expected.
 	- `DJANGO_ENV=production SECRET_KEY= ... manage.py check` fails as expected.
 	- `DJANGO_ENV=production EMAIL_BACKEND= ... manage.py check` fails as expected.
-- Execution sheet for remaining section-2 items: [deploy/aws/prod-env-fill-sheet.md](deploy/aws/prod-env-fill-sheet.md).
+- Execution sheet for remaining section-2 items: [deploy/render/prod-env-fill-sheet.md](deploy/render/prod-env-fill-sheet.md).
 
 ## 3) Security Readiness
 
@@ -166,7 +172,7 @@ Definition of done:
 
 Goal: ship safely and recover quickly.
 
-- [x] Deployment assets exist (Docker and AWS deploy pack).
+- [x] Deployment assets exist (Docker and Render deploy pack).
 - [ ] Build production image reproducibly.
 - [ ] Deploy to staging and run full smoke test pack.
 - [ ] Perform canary rollout.
