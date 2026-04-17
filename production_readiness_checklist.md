@@ -64,6 +64,7 @@ Current note:
 	- `DJANGO_ENV=production ALLOWED_HOSTS= ... manage.py check` fails as expected.
 	- `DJANGO_ENV=production SECRET_KEY= ... manage.py check` fails as expected.
 	- `DJANGO_ENV=production EMAIL_BACKEND= ... manage.py check` fails as expected.
+- Execution sheet for remaining section-2 items: [deploy/aws/prod-env-fill-sheet.md](deploy/aws/prod-env-fill-sheet.md).
 
 ## 3) Security Readiness
 
