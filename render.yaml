@@ -163,7 +163,7 @@ services:
 
 databases:
   - name: jambo-rafiki-postgres
-    plan: starter
+    plan: basic-1gb
     region: oregon
     databaseName: jambo_rafiki
     user: jambo_rafiki_user
