@@ -33,9 +33,9 @@ services:
           name: jambo-rafiki-postgres
           property: connectionString
       - key: ALLOWED_HOSTS
-        sync: false
+        value: jambo-rafiki-backend-web.onrender.com
       - key: CSRF_TRUSTED_ORIGINS
-        sync: false
+        value: https://jamborafiki.vercel.app,https://jambo-rafiki-backend-web.onrender.com
       - key: EMAIL_BACKEND
         value: django.core.mail.backends.smtp.EmailBackend
       - key: EMAIL_HOST
@@ -115,9 +115,9 @@ services:
           name: jambo-rafiki-postgres
           property: connectionString
       - key: ALLOWED_HOSTS
-        sync: false
+        value: jambo-rafiki-backend-web.onrender.com
       - key: CSRF_TRUSTED_ORIGINS
-        sync: false
+        value: https://jamborafiki.vercel.app,https://jambo-rafiki-backend-web.onrender.com
       - key: EMAIL_BACKEND
         value: django.core.mail.backends.smtp.EmailBackend
       - key: EMAIL_HOST
