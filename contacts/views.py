@@ -1,14 +1,21 @@
 """
 Contact views
 """
+import logging
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
-from django.core.mail import send_mail
 from django.conf import settings
+from core.audit import log_audit_event
+from core.notification_service import queue_template_email
+from core.throttles import PublicFormRateThrottle
 from .models import ContactSubmission
 from .serializers import ContactSubmissionSerializer, ContactSubmissionDetailSerializer
+
+
+logger = logging.getLogger(__name__)
 
 
 class ContactSubmissionViewSet(viewsets.ModelViewSet):
@@ -36,6 +43,11 @@ class ContactSubmissionViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return [AllowAny()]
         return [IsAdminUser()]
+
+    def get_throttles(self):
+        if self.action == 'create':
+            return [PublicFormRateThrottle()]
+        return super().get_throttles()
     
     def create(self, request):
         """Create new contact submission"""
@@ -65,6 +77,14 @@ class ContactSubmissionViewSet(viewsets.ModelViewSet):
         """Mark a submission as read"""
         submission = self.get_object()
         submission.mark_as_read()
+
+        log_audit_event(
+            'contact.mark_read',
+            actor=request.user,
+            target=submission,
+            source='contacts.viewset.mark_read',
+            metadata={'subject': submission.subject, 'email': submission.email},
+        )
         
         serializer = self.get_serializer(submission)
         return Response(serializer.data)
@@ -72,64 +92,34 @@ class ContactSubmissionViewSet(viewsets.ModelViewSet):
     def send_admin_notification(self, submission):
         """Send email notification to admin about new submission"""
         try:
-            subject = f"New Contact Form: {submission.subject}"
-            message = f"""
-New contact form submission received:
-
-From: {submission.name}
-Email: {submission.email}
-Subject: {submission.subject}
-
-Message:
-{submission.message}
-
----
-Submitted at: {submission.created_at.strftime('%Y-%m-%d %H:%M:%S')}
-
-View in admin: {settings.FRONTEND_URL}/admin/contacts/contactsubmission/{submission.id}/
-            """
-            
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+            queue_template_email(
+                'contact_admin_notification',
+                context={
+                    'name': submission.name,
+                    'email': submission.email,
+                    'subject': submission.subject,
+                    'message': submission.message,
+                    'submitted_at': submission.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'admin_url': f"{settings.FRONTEND_URL}/admin/contacts/contactsubmission/{submission.id}/",
+                },
                 recipient_list=[settings.ADMIN_EMAIL],
-                fail_silently=True,
+                from_email=settings.DEFAULT_FROM_EMAIL,
             )
-        except Exception as e:
-            # Log error but don't fail the request
-            print(f"Failed to send admin notification: {e}")
+        except Exception:
+            logger.exception("Failed to send admin notification for contact_submission_id=%s", submission.id)
     
     def send_auto_reply(self, submission):
         """Send auto-reply to the submitter"""
         try:
-            subject = "Thank you for contacting Jambo Rafiki"
-            message = f"""
-Dear {submission.name},
-
-Thank you for reaching out to Jambo Rafiki Children Orphanage and Church Centre.
-
-We have received your message and will respond as soon as possible.
-
-Your message:
-Subject: {submission.subject}
-{submission.message}
-
----
-Blessings,
-Jambo Rafiki Team
-
-P.O Box 311 – 40222, OYUGIS - KENYA
-Email: hopenationsministries8@gmail.com
-            """
-            
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+            queue_template_email(
+                'contact_auto_reply',
+                context={
+                    'name': submission.name,
+                    'subject': submission.subject,
+                    'message': submission.message,
+                },
                 recipient_list=[submission.email],
-                fail_silently=True,
+                from_email=settings.DEFAULT_FROM_EMAIL,
             )
-        except Exception as e:
-            # Log error but don't fail the request
-            print(f"Failed to send auto-reply: {e}")
+        except Exception:
+            logger.exception("Failed to send contact auto-reply for contact_submission_id=%s", submission.id)

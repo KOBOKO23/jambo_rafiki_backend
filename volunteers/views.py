@@ -1,14 +1,21 @@
 """
 Volunteer views
 """
+import logging
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
-from django.core.mail import send_mail
 from django.conf import settings
+from core.notification_service import queue_template_email
+from core.throttles import PublicFormRateThrottle
 from .models import VolunteerApplication
 from .serializers import VolunteerApplicationSerializer, VolunteerApplicationDetailSerializer
+from .services import VolunteerService
+
+
+logger = logging.getLogger(__name__)
 
 
 class VolunteerApplicationViewSet(viewsets.ModelViewSet):
@@ -26,6 +33,11 @@ class VolunteerApplicationViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             return [AllowAny()]
         return [IsAdminUser()]
+
+    def get_throttles(self):
+        if self.action == 'create':
+            return [PublicFormRateThrottle()]
+        return super().get_throttles()
     
     def create(self, request):
         """Create new volunteer application"""
@@ -55,92 +67,59 @@ class VolunteerApplicationViewSet(viewsets.ModelViewSet):
         """Update application status"""
         application = self.get_object()
         new_status = request.data.get('status')
-        
-        if new_status in dict(VolunteerApplication.STATUS_CHOICES):
-            application.status = new_status
-            application.save()
-            
+
+        try:
+            application = VolunteerService.update_status(
+                application=application,
+                new_status=new_status,
+                actor=request.user,
+            )
             serializer = self.get_serializer(application)
             return Response(serializer.data)
-        
-        return Response(
-            {'error': 'Invalid status'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        except ValueError:
+            return Response(
+                {'error': 'Invalid status'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     def send_applicant_confirmation(self, application):
         """Send confirmation email to applicant"""
         try:
-            subject = "Volunteer Application Received - Jambo Rafiki"
-            message = f"""
-Dear {application.name},
-
-Thank you for your interest in volunteering with Jambo Rafiki Children Orphanage and Church Centre!
-
-We have received your application and will review it carefully. Our team will contact you within 5-7 business days.
-
-Your Application Details:
-- Skills: {application.skills[:100]}...
-- Availability: {application.availability}
-- Duration: {application.duration}
-
-If you have any questions, please feel free to reach out to us.
-
-Blessings,
-Jambo Rafiki Team
-
-P.O Box 311 – 40222, OYUGIS - KENYA
-Email: hopenationsministries8@gmail.com
-            """
-            
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+            queue_template_email(
+                'volunteer_confirmation',
+                context={
+                    'name': application.name,
+                    'skills_preview': f"{application.skills[:100]}...",
+                    'availability': application.availability,
+                    'duration': application.duration,
+                },
                 recipient_list=[application.email],
-                fail_silently=True,
+                from_email=settings.DEFAULT_FROM_EMAIL,
             )
-        except Exception as e:
-            print(f"Failed to send applicant confirmation: {e}")
+        except Exception:
+            logger.exception("Failed to send volunteer confirmation for application_id=%s", application.id)
     
     def send_admin_notification(self, application):
         """Send notification to admin about new application"""
         try:
-            subject = f"New Volunteer Application: {application.name}"
-            message = f"""
-New volunteer application received:
-
-Name: {application.name}
-Email: {application.email}
-Phone: {application.phone}
-Location: {application.location}
-
-Skills: {application.skills}
-
-Availability: {application.availability}
-Duration: {application.duration}
-
-Motivation:
-{application.motivation}
-
-Experience:
-{application.experience}
-
-Areas of Interest:
-{application.areas_of_interest}
-
----
-Submitted at: {application.created_at.strftime('%Y-%m-%d %H:%M:%S')}
-
-View in admin: {settings.FRONTEND_URL}/admin/volunteers/volunteerapplication/{application.id}/
-            """
-            
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+            queue_template_email(
+                'volunteer_admin_notification',
+                context={
+                    'name': application.name,
+                    'email': application.email,
+                    'phone': application.phone,
+                    'location': application.location,
+                    'skills': application.skills,
+                    'availability': application.availability,
+                    'duration': application.duration,
+                    'motivation': application.motivation,
+                    'experience': application.experience,
+                    'areas_of_interest': application.areas_of_interest,
+                    'submitted_at': application.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                    'admin_url': f"{settings.FRONTEND_URL}/admin/volunteers/volunteerapplication/{application.id}/",
+                },
                 recipient_list=[settings.ADMIN_EMAIL],
-                fail_silently=True,
+                from_email=settings.DEFAULT_FROM_EMAIL,
             )
-        except Exception as e:
-            print(f"Failed to send admin notification: {e}")
+        except Exception:
+            logger.exception("Failed to send volunteer admin notification for application_id=%s", application.id)

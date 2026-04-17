@@ -74,7 +74,7 @@ class StripeDonationSerializer(serializers.Serializer):
     purpose = serializers.CharField(max_length=300, required=False, allow_blank=True)
     message = serializers.CharField(required=False, allow_blank=True)
     is_anonymous = serializers.BooleanField(default=False)
-    payment_method_id = serializers.CharField(max_length=200)  # From Stripe.js
+    payment_method_id = serializers.CharField(max_length=200, required=False, allow_blank=True)
 
 
 class DonationDetailSerializer(serializers.ModelSerializer):

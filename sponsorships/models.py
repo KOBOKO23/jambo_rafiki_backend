@@ -70,6 +70,9 @@ class Sponsorship(models.Model):
 
     class Meta:
         ordering = ['-created_at']
+        constraints = [
+            models.UniqueConstraint(fields=['child', 'sponsor'], name='uniq_child_sponsor_pair'),
+        ]
 
     def __str__(self):
         return f"{self.sponsor.name} sponsors {self.child}"

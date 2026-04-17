@@ -1,0 +1,53 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff pip-audit
+
+      - name: Django checks
+        env:
+          DEBUG: "True"
+          SECRET_KEY: ci-secret-key
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+        run: |
+          python manage.py check
+          python manage.py makemigrations --check --dry-run
+
+      - name: Lint (critical rules)
+        run: |
+          ruff check . --select E9,F63,F7,F82
+
+      - name: Run test suite
+        env:
+          DEBUG: "True"
+          SECRET_KEY: ci-secret-key
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          EMAIL_BACKEND: django.core.mail.backends.locmem.EmailBackend
+        run: |
+          python manage.py test --verbosity 2
+
+      - name: Security dependency audit
+        continue-on-error: true
+        run: |
+          pip-audit -r requirements.txt

@@ -3,6 +3,7 @@ M-Pesa integration module
 """
 import requests
 import base64
+from urllib.parse import urlencode, urlparse, urlunparse, parse_qsl
 from datetime import datetime
 from django.conf import settings
 
@@ -22,11 +23,44 @@ class MPesaClient:
             self.base_url = 'https://api.safaricom.co.ke'
         else:
             self.base_url = 'https://sandbox.safaricom.co.ke'
+
+    def validate_configuration(self):
+        """Ensure required credentials are present before provider calls."""
+        missing = []
+        if not self.consumer_key:
+            missing.append('MPESA_CONSUMER_KEY')
+        if not self.consumer_secret:
+            missing.append('MPESA_CONSUMER_SECRET')
+        if not self.shortcode:
+            missing.append('MPESA_SHORTCODE')
+        if not self.passkey:
+            missing.append('MPESA_PASSKEY')
+        if not self.callback_url:
+            missing.append('MPESA_CALLBACK_URL')
+
+        if missing:
+            raise ValueError(
+                'Missing M-Pesa configuration: ' + ', '.join(missing)
+            )
+
+    def build_callback_url(self):
+        """Attach the shared secret token to the callback URL when configured."""
+        if not self.callback_url:
+            return self.callback_url
+
+        if not settings.MPESA_CALLBACK_TOKEN:
+            return self.callback_url
+
+        parsed = urlparse(self.callback_url)
+        query_items = dict(parse_qsl(parsed.query))
+        query_items['token'] = settings.MPESA_CALLBACK_TOKEN
+        return urlunparse(parsed._replace(query=urlencode(query_items)))
     
     def get_access_token(self):
         """
         Get OAuth access token from M-Pesa API
         """
+        self.validate_configuration()
         url = f"{self.base_url}/oauth/v1/generate?grant_type=client_credentials"
         
         try:
@@ -86,6 +120,7 @@ class MPesaClient:
         Returns:
             dict: Response from M-Pesa API
         """
+        self.validate_configuration()
         # Get access token
         access_token = self.get_access_token()
         
@@ -115,7 +150,7 @@ class MPesaClient:
             "PartyA": formatted_phone,
             "PartyB": self.shortcode,
             "PhoneNumber": formatted_phone,
-            "CallBackURL": self.callback_url,
+            "CallBackURL": self.build_callback_url(),
             "AccountReference": str(account_reference),
             "TransactionDesc": transaction_desc
         }
@@ -189,6 +224,8 @@ def process_mpesa_callback(callback_data):
     """
     result = {
         'success': False,
+        'checkout_request_id': None,
+        'merchant_request_id': None,
         'transaction_id': None,
         'amount': None,
         'phone_number': None,
@@ -199,6 +236,9 @@ def process_mpesa_callback(callback_data):
     try:
         body = callback_data.get('Body', {})
         stk_callback = body.get('stkCallback', {})
+
+        result['checkout_request_id'] = stk_callback.get('CheckoutRequestID')
+        result['merchant_request_id'] = stk_callback.get('MerchantRequestID')
         
         result_code = stk_callback.get('ResultCode')
         result_desc = stk_callback.get('ResultDesc')

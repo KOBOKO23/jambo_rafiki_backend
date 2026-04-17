@@ -1,7 +1,10 @@
 """
 Donation models
 """
+import uuid
+
 from django.db import models
+from django.db.models import Q
 from django.core.validators import MinValueValidator, EmailValidator
 from decimal import Decimal
 
@@ -67,6 +70,8 @@ class Donation(models.Model):
     # M-Pesa specific fields
     mpesa_receipt = models.CharField(max_length=100, blank=True)
     mpesa_phone = models.CharField(max_length=15, blank=True)
+    mpesa_checkout_request_id = models.CharField(max_length=100, blank=True, null=True, unique=True)
+    mpesa_merchant_request_id = models.CharField(max_length=100, blank=True, null=True, unique=True)
     
     # Stripe specific fields
     stripe_payment_intent = models.CharField(max_length=200, blank=True)
@@ -77,7 +82,7 @@ class Donation(models.Model):
     
     # Receipt
     receipt_sent = models.BooleanField(default=False)
-    receipt_number = models.CharField(max_length=50, unique=True, blank=True)
+    receipt_number = models.CharField(max_length=50, unique=True, blank=True, null=True, default=None)
     
     # Metadata
     created_at = models.DateTimeField(auto_now_add=True)
@@ -94,6 +99,8 @@ class Donation(models.Model):
             models.Index(fields=['status']),
             models.Index(fields=['payment_method']),
             models.Index(fields=['donor_email']),
+            models.Index(fields=['payment_method', 'status', '-created_at']),
+            models.Index(fields=['status', 'updated_at']),
         ]
     
     def __str__(self):
@@ -101,15 +108,12 @@ class Donation(models.Model):
     
     def save(self, *args, **kwargs):
         """Generate receipt number if completed"""
-        if self.status == 'completed' and not self.receipt_number:
+        if self.status == 'completed' and self.receipt_number in (None, ''):
             # Generate receipt number: JR-YYYY-MM-XXXX
             from django.utils import timezone
             now = timezone.now()
-            count = Donation.objects.filter(
-                created_at__year=now.year,
-                created_at__month=now.month
-            ).count() + 1
-            self.receipt_number = f"JR-{now.year}-{now.month:02d}-{count:04d}"
+            unique = uuid.uuid4().hex[:6].upper()
+            self.receipt_number = f"JR-{now.year}-{now.month:02d}-{unique}"
         
         super().save(*args, **kwargs)
 
@@ -117,14 +121,37 @@ class Donation(models.Model):
 class DonationCallback(models.Model):
     """Store raw callback data from payment gateways"""
     
-    donation = models.ForeignKey(Donation, on_delete=models.CASCADE, related_name='callbacks', null=True, blank=True)
+    donation = models.ForeignKey(Donation, on_delete=models.SET_NULL, related_name='callbacks', null=True, blank=True)
     provider = models.CharField(max_length=20)  # mpesa, stripe, paypal
+    external_id = models.CharField(max_length=200, blank=True)
+    payload_hash = models.CharField(max_length=64, blank=True)
     raw_data = models.JSONField()
     created_at = models.DateTimeField(auto_now_add=True)
     processed = models.BooleanField(default=False)
+    requires_reconciliation = models.BooleanField(default=False)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+    processing_notes = models.TextField(blank=True)
     
     class Meta:
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['provider', 'external_id']),
+            models.Index(fields=['provider', 'payload_hash']),
+            models.Index(fields=['processed', '-created_at']),
+            models.Index(fields=['requires_reconciliation', '-created_at']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['provider', 'external_id'],
+                condition=~Q(external_id=''),
+                name='uniq_donationcallback_provider_external_id',
+            ),
+            models.UniqueConstraint(
+                fields=['provider', 'payload_hash'],
+                condition=~Q(payload_hash=''),
+                name='uniq_donationcallback_provider_payload_hash',
+            ),
+        ]
     
     def __str__(self):
         return f"{self.provider} callback - {self.created_at}"
