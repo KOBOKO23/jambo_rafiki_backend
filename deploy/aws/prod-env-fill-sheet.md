@@ -12,12 +12,12 @@ Fill all values before production startup.
 
 | Variable | Required | Production Value | Status |
 |---|---|---|---|
-| DJANGO_ENV | Yes | production | [ ] |
-| DEBUG | Yes | False | [ ] |
-| ALLOWED_HOSTS | Yes | api.yourdomain.com | [ ] |
-| SECRET_KEY | Yes | <secure-random-secret> | [ ] |
+| DJANGO_ENV | Yes | production | [*] |
+| DEBUG | Yes | False | [*] |
+| ALLOWED_HOSTS | Yes | api.yourdomain.com | [*] |
+| SECRET_KEY | Yes | <secure-random-secret> | [*] |
 | DATABASE_URL | Yes | <postgresql://...> | [ ] |
-| EMAIL_BACKEND | Yes | <provider-backend> | [ ] |
+| EMAIL_BACKEND | Yes | <provider-backend> | [*] |
 | EMAIL_HOST | Yes | <smtp-host> | [ ] |
 | EMAIL_PORT | Yes | <smtp-port> | [ ] |
 | EMAIL_USE_TLS | Yes | True | [ ] |
@@ -32,9 +32,9 @@ These should match the deployed frontend.
 
 | Variable | Required | Production Value | Status |
 |---|---|---|---|
-| FRONTEND_URL | Yes | https://jamborafiki.vercel.app | [ ] |
-| CORS_ALLOWED_ORIGINS | Yes | https://jamborafiki.vercel.app | [ ] |
-| CSRF_TRUSTED_ORIGINS | Yes | https://jamborafiki.vercel.app,https://api.yourdomain.com | [ ] |
+| FRONTEND_URL | Yes | https://jamborafiki.vercel.app | [*] |
+| CORS_ALLOWED_ORIGINS | Yes | https://jamborafiki.vercel.app | [*] |
+| CSRF_TRUSTED_ORIGINS | Yes | https://jamborafiki.vercel.app,https://api.yourdomain.com | [*] |
 
 ## 3) Media Storage Variables
 

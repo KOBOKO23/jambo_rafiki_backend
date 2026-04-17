@@ -53,6 +53,7 @@ Goal: ensure production settings are safe and complete.
 - [ ] SENTRY_DSN (or equivalent) is configured.
 
 Definition of done:
+- [*] Production configuration guardrails are enforced in code and verified with production-mode checks.
 - [ ] Production environment starts cleanly with all required env vars.
 
 Current note:
