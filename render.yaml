@@ -10,6 +10,8 @@ services:
     startCommand: gunicorn jambo_rafiki.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 60
     healthCheckPath: /ready/
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.11
       - key: DJANGO_ENV
         value: production
       - key: DEBUG
@@ -90,6 +92,8 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: python manage.py process_jobs
     envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.11
       - key: DJANGO_ENV
         value: production
       - key: DEBUG
