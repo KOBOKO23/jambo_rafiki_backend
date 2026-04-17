@@ -23,14 +23,18 @@ Verification note:
 
 Goal: produce a deployable, auditable release branch.
 
-- [ ] Decide which current modified files are intended for release.
-- [ ] Commit intended changes in focused commits.
-- [ ] Remove or ignore non-release files.
-- [ ] Ensure git status is clean.
-- [ ] Tag release candidate (for example v1.0.0-rc1).
+- [x] Decide which current modified files are intended for release.
+- [x] Commit intended changes in focused commits.
+- [x] Remove or ignore non-release files.
+- [x] Ensure git status is clean.
+- [x] Tag release candidate (for example v1.0.0-rc1).
 
 Definition of done:
-- [ ] Release branch is clean and tagged.
+- [x] Release branch is clean and tagged.
+
+Verification note:
+- Release baseline commit: `bed58d2`.
+- Release candidate tag: `v1.0.0-rc1`.
 
 ## 2) Configuration Readiness
 
