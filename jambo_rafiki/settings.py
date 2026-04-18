@@ -73,7 +73,7 @@ ROOT_URLCONF = 'jambo_rafiki.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'jambo_rafiki' / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -89,9 +89,26 @@ TEMPLATES = [
 WSGI_APPLICATION = 'jambo_rafiki.wsgi.application'
 
 # Database
+_raw_database_url = config('DATABASE_URL', default='sqlite:///db.sqlite3')
+
+
+def _validate_production_database_configuration(database_url: str) -> None:
+    """Fail fast when production database configuration is missing or unsafe."""
+    if DJANGO_ENV != 'production':
+        return
+
+    normalized_database_url = (database_url or '').strip()
+    if not normalized_database_url:
+        raise ImproperlyConfigured('DATABASE_URL must be set in production')
+    if normalized_database_url.startswith('sqlite:///') or normalized_database_url.startswith('sqlite://'):
+        raise ImproperlyConfigured('DATABASE_URL must point to a non-SQLite production database')
+
+
+_validate_production_database_configuration(_raw_database_url)
+
 DATABASES = {
     'default': dj_database_url.config(
-        default=config('DATABASE_URL', default='sqlite:///db.sqlite3'),
+        default=_raw_database_url,
         conn_max_age=600
     )
 }
@@ -259,8 +276,50 @@ EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
 EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='infodirector@jamborafiki.org')
-ADMIN_EMAIL = config('ADMIN_EMAIL', default='infodirector@jamborafiki.org')
+
+
+def _validate_production_email_configuration() -> None:
+    """Fail fast when production SMTP settings are incomplete."""
+    if DEBUG:
+        return
+
+    smtp_backends = {
+        'django.core.mail.backends.smtp.EmailBackend',
+        'anymail.backends.smtp.EmailBackend',
+    }
+    if EMAIL_BACKEND not in smtp_backends:
+        return
+
+    missing = []
+    if not EMAIL_HOST.strip():
+        missing.append('EMAIL_HOST')
+    if not EMAIL_PORT:
+        missing.append('EMAIL_PORT')
+    if not EMAIL_HOST_USER.strip():
+        missing.append('EMAIL_HOST_USER')
+    if not EMAIL_HOST_PASSWORD.strip():
+        missing.append('EMAIL_HOST_PASSWORD')
+
+    if missing:
+        missing_values = ', '.join(missing)
+        raise ImproperlyConfigured(
+            f'SMTP email backend requires {missing_values} in production'
+        )
+
+
+_validate_production_email_configuration()
+
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='benjaminoyoo182@gmail.com')
+ADMIN_NOTIFICATION_EMAILS = config(
+    'ADMIN_NOTIFICATION_EMAILS',
+    default='benjaminoyoo182@gmail.com,infodirector@jamborafiki.org,inforinternationaldirector@jamborafiki.org,email@jamborafiki.org',
+    cast=Csv(),
+)
+ADMIN_NOTIFICATION_EMAILS = [email.strip() for email in ADMIN_NOTIFICATION_EMAILS if email and email.strip()]
+ADMIN_EMAIL = config(
+    'ADMIN_EMAIL',
+    default=ADMIN_NOTIFICATION_EMAILS[0] if ADMIN_NOTIFICATION_EMAILS else 'infodirector@jamborafiki.org',
+)
 
 # Public organization identity/contact/banking details for frontend consumption.
 ORGANIZATION_DOMAIN = config('ORGANIZATION_DOMAIN', default='www.jamborafiki.org')
