@@ -32,16 +32,11 @@ class HealthEndpointTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         payload = response.json()
-        self.assertEqual(payload['website']['domain'], 'www.jamborafiki.org')
-        self.assertEqual(payload['website']['url'], 'https://www.jamborafiki.org')
-        self.assertEqual(payload['contact']['email'], 'infodirector@jamborafiki.org')
-        self.assertEqual(payload['contact']['call_redirect_number'], '+254799616542')
+        self.assertNotIn('website', payload)
+        self.assertNotIn('bank_account', payload)
+        self.assertEqual(payload['contact']['email'], 'info@jamborafiki.org')
+        self.assertNotIn('call_redirect_number', payload['contact'])
         self.assertEqual(payload['contact']['call_redirect_url'], 'tel:+254799616542')
-        self.assertEqual(payload['bank_account']['bank_code'], '07')
-        self.assertEqual(payload['bank_account']['branch_code'], '123')
-        self.assertEqual(payload['bank_account']['swift_code'], 'CBAFKENX')
-        self.assertEqual(payload['bank_account']['account_name'], 'Benjamin Oyoo Ondoro')
-        self.assertEqual(payload['bank_account']['account_number'], '1002622088')
 
     def test_organization_config_endpoint_uses_settings_overrides(self):
         with self.settings(

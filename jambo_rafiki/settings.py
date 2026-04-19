@@ -321,15 +321,10 @@ ADMIN_NOTIFICATION_EMAILS = ['info@jamborafiki.org']
 ADMIN_EMAIL = config('ADMIN_EMAIL', default='info@jamborafiki.org')
 
 # Public organization identity/contact/banking details for frontend consumption.
-ORGANIZATION_DOMAIN = config('ORGANIZATION_DOMAIN', default='www.jamborafiki.org')
-ORGANIZATION_WEBSITE_URL = config('ORGANIZATION_WEBSITE_URL', default='https://www.jamborafiki.org')
-ORGANIZATION_PUBLIC_EMAIL = config('ORGANIZATION_PUBLIC_EMAIL', default='infodirector@jamborafiki.org')
+ORGANIZATION_DOMAIN = config('ORGANIZATION_DOMAIN', default='')
+ORGANIZATION_WEBSITE_URL = config('ORGANIZATION_WEBSITE_URL', default='')
+ORGANIZATION_PUBLIC_EMAIL = config('ORGANIZATION_PUBLIC_EMAIL', default='info@jamborafiki.org')
 ORGANIZATION_CALL_REDIRECT_NUMBER = config('ORGANIZATION_CALL_REDIRECT_NUMBER', default='+254799616542')
-ORGANIZATION_BANK_CODE = config('ORGANIZATION_BANK_CODE', default='07')
-ORGANIZATION_BANK_BRANCH_CODE = config('ORGANIZATION_BANK_BRANCH_CODE', default='123')
-ORGANIZATION_BANK_SWIFT_CODE = config('ORGANIZATION_BANK_SWIFT_CODE', default='CBAFKENX')
-ORGANIZATION_BANK_ACCOUNT_NAME = config('ORGANIZATION_BANK_ACCOUNT_NAME', default='Benjamin Oyoo Ondoro')
-ORGANIZATION_BANK_ACCOUNT_NUMBER = config('ORGANIZATION_BANK_ACCOUNT_NUMBER', default='1002622088')
 
 # M-Pesa Configuration
 MPESA_ENVIRONMENT = config('MPESA_ENVIRONMENT', default='sandbox')
