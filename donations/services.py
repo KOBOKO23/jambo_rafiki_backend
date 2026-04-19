@@ -122,10 +122,16 @@ class DonationService:
         if donation is None:
             raise ValueError(f'Donation not found for M-Pesa initiation job: id={donation_id}')
 
+        # Ensure amount is a float for M-Pesa
+        raw_amount = payload.get('amount', donation.amount)
+        try:
+            amount = float(raw_amount)
+        except (TypeError, ValueError):
+            raise RuntimeError(f"Invalid amount for M-Pesa initiation: {raw_amount}")
         result = DonationService.initiate_mpesa_payment(
             donation,
             donor_phone=payload.get('donor_phone', donation.donor_phone),
-            amount=payload.get('amount', donation.amount),
+            amount=amount,
             purpose=payload.get('purpose', donation.purpose),
         )
         if not result.get('success'):

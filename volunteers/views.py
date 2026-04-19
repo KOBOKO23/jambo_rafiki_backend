@@ -118,7 +118,7 @@ class VolunteerApplicationViewSet(viewsets.ModelViewSet):
                     'submitted_at': application.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     'admin_url': f"{settings.FRONTEND_URL}/admin/volunteers/volunteerapplication/{application.id}/",
                 },
-                recipient_list=[settings.ADMIN_EMAIL],
+                recipient_list=settings.ADMIN_NOTIFICATION_EMAILS,
                 from_email=settings.DEFAULT_FROM_EMAIL,
             )
         except Exception:

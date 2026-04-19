@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jambo Rafiki Backend</title>
+    <style>
+        body { font-family: system-ui, sans-serif; background: #f7fafc; color: #222; margin: 0; padding: 0; }
+        .container { max-width: 480px; margin: 80px auto; background: #fff; border-radius: 12px; box-shadow: 0 2px 12px #0001; padding: 2.5rem 2rem; text-align: center; }
+        h1 { color: #1a73e8; margin-bottom: 0.5em; }
+        p { margin-bottom: 2em; }
+        .admin-link { display: inline-block; background: #1a73e8; color: #fff; padding: 0.75em 1.5em; border-radius: 6px; text-decoration: none; font-weight: 600; transition: background 0.2s; }
+        .admin-link:hover { background: #1558b0; }
+    </style>
+    <script>
+        setTimeout(function() {
+            window.location.href = '/admin/';
+        }, 3500);
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 Jambo Rafiki Backend is Live!</h1>
+        <p>Welcome to your backend server.<br>
+        Proceed to <a href="/admin/" class="admin-link">Admin Login</a>.<br>
+        You will be redirected automatically.</p>
+    </div>
+</body>
+</html>

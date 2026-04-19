@@ -137,7 +137,7 @@ def register_interest(request):
                     'phone': interest.phone,
                     'preferred_level': interest.preferred_level or 'Not specified',
                 },
-                recipient_list=[settings.ADMIN_EMAIL],
+                recipient_list=settings.ADMIN_NOTIFICATION_EMAILS,
                 from_email=settings.DEFAULT_FROM_EMAIL,
             )
         except Exception:

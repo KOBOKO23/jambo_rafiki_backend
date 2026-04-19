@@ -138,7 +138,7 @@ class TestimonialViewSet(viewsets.ModelViewSet):
                     'submitted_at': testimonial.created_at.strftime('%Y-%m-%d %H:%M:%S'),
                     'admin_url': f"{settings.FRONTEND_URL}/admin/testimonials/testimonial/{testimonial.id}/change/",
                 },
-                recipient_list=[settings.ADMIN_EMAIL],
+                recipient_list=settings.ADMIN_NOTIFICATION_EMAILS,
                 from_email=settings.DEFAULT_FROM_EMAIL,
             )
         except Exception:

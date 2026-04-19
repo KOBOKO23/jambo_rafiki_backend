@@ -145,7 +145,7 @@ class EmailService:
         return EmailService.send_simple_email(
             subject=f"[Admin] {subject}",
             message=message,
-            recipient_list=[settings.ADMIN_EMAIL],
+            recipient_list=list(settings.ADMIN_NOTIFICATION_EMAILS),
         )
 
 

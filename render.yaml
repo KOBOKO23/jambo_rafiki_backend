@@ -36,24 +36,7 @@ services:
         value: jambo-rafiki-backend-web.onrender.com
       - key: CSRF_TRUSTED_ORIGINS
         value: https://jamborafiki.vercel.app,https://jambo-rafiki-backend-web.onrender.com
-      - key: EMAIL_BACKEND
-        value: django.core.mail.backends.smtp.EmailBackend
-      - key: EMAIL_HOST
-        sync: false
-      - key: EMAIL_PORT
-        value: "587"
-      - key: EMAIL_USE_TLS
-        value: "True"
-      - key: EMAIL_HOST_USER
-        sync: false
-      - key: EMAIL_HOST_PASSWORD
-        sync: false
-      - key: DEFAULT_FROM_EMAIL
-        sync: false
-      - key: ADMIN_EMAIL
-        sync: false
-      - key: ADMIN_NOTIFICATION_EMAILS
-        sync: false
+      # EMAIL and SendGrid variables removed
       - key: MPESA_ENVIRONMENT
         value: sandbox
       - key: MPESA_CONSUMER_KEY
@@ -72,16 +55,8 @@ services:
         sync: false
       - key: MPESA_CALLBACK_SIGNATURE_HEADER
         value: X-MPESA-SIGNATURE
-      - key: STRIPE_PUBLIC_KEY
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: SENTRY_DSN
-        sync: false
-      - key: SENTRY_TRACES_SAMPLE_RATE
-        value: "0.05"
+      # Stripe variables removed
+      # Sentry variables removed
 
   - type: worker
     name: jambo-rafiki-backend-worker
@@ -118,24 +93,7 @@ services:
         value: jambo-rafiki-backend-web.onrender.com
       - key: CSRF_TRUSTED_ORIGINS
         value: https://jamborafiki.vercel.app,https://jambo-rafiki-backend-web.onrender.com
-      - key: EMAIL_BACKEND
-        value: django.core.mail.backends.smtp.EmailBackend
-      - key: EMAIL_HOST
-        sync: false
-      - key: EMAIL_PORT
-        value: "587"
-      - key: EMAIL_USE_TLS
-        value: "True"
-      - key: EMAIL_HOST_USER
-        sync: false
-      - key: EMAIL_HOST_PASSWORD
-        sync: false
-      - key: DEFAULT_FROM_EMAIL
-        sync: false
-      - key: ADMIN_EMAIL
-        sync: false
-      - key: ADMIN_NOTIFICATION_EMAILS
-        sync: false
+      # EMAIL and SendGrid variables removed
       - key: MPESA_ENVIRONMENT
         value: sandbox
       - key: MPESA_CONSUMER_KEY
@@ -154,16 +112,8 @@ services:
         sync: false
       - key: MPESA_CALLBACK_SIGNATURE_HEADER
         value: X-MPESA-SIGNATURE
-      - key: STRIPE_PUBLIC_KEY
-        sync: false
-      - key: STRIPE_SECRET_KEY
-        sync: false
-      - key: STRIPE_WEBHOOK_SECRET
-        sync: false
-      - key: SENTRY_DSN
-        sync: false
-      - key: SENTRY_TRACES_SAMPLE_RATE
-        value: "0.05"
+      # Stripe variables removed
+      # Sentry variables removed
 
 databases:
   - name: jambo-rafiki-postgres

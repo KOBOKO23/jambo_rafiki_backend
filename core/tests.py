@@ -5,17 +5,21 @@ from __future__ import annotations
 from io import BytesIO
 
 from django.contrib.auth.models import User
+from django.core.exceptions import ImproperlyConfigured
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import TestCase
 from django.urls import reverse
+from unittest.mock import patch
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from PIL import Image
 
 from core.audit import log_audit_event
 from core.admin import AdminUserCreationForm
+from core.email_service import EmailService
 from core.models import AuditEvent, BackgroundJob
 from core.image_placement_serializers import IMAGE_PLACEMENT_CONFIG
+import jambo_rafiki.settings as project_settings
 
 
 class AdminUserCreationFormTest(TestCase):
@@ -231,6 +235,34 @@ class AdminSessionAuthAPITest(APITestCase):
         headers = self._csrf_headers()
         response = self.client.post(reverse('admin-auth-logout'), **headers)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class EmailServiceTest(TestCase):
+    @patch('core.email_service.send_mail', return_value=1)
+    def test_admin_notifications_use_shared_recipient_list(self, mock_send_mail):
+        EmailService.send_admin_notification('Subject', 'Body')
+
+        mock_send_mail.assert_called_once()
+        _, kwargs = mock_send_mail.call_args
+        self.assertEqual(kwargs['recipient_list'], ['benjaminoyoo182@gmail.com', 'infodirector@jamborafiki.org', 'inforinternationaldirector@jamborafiki.org', 'email@jamborafiki.org'])
+
+    def test_smtp_production_requires_complete_email_configuration(self):
+        with patch.object(project_settings, 'DEBUG', False), \
+             patch.object(project_settings, 'EMAIL_BACKEND', 'django.core.mail.backends.smtp.EmailBackend'), \
+             patch.object(project_settings, 'EMAIL_HOST', ''), \
+             patch.object(project_settings, 'EMAIL_PORT', 587), \
+             patch.object(project_settings, 'EMAIL_HOST_USER', ''), \
+             patch.object(project_settings, 'EMAIL_HOST_PASSWORD', ''):
+            with self.assertRaisesMessage(ImproperlyConfigured, 'SMTP email backend requires EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD in production'):
+                project_settings._validate_production_email_configuration()
+
+    def test_production_database_requires_non_sqlite_database_url(self):
+        with patch.object(project_settings, 'DJANGO_ENV', 'production'):
+            with self.assertRaisesMessage(ImproperlyConfigured, 'DATABASE_URL must be set in production'):
+                project_settings._validate_production_database_configuration('')
+
+            with self.assertRaisesMessage(ImproperlyConfigured, 'DATABASE_URL must point to a non-SQLite production database'):
+                project_settings._validate_production_database_configuration('sqlite:///db.sqlite3')
 
 
 class CMSAdminAPITest(APITestCase):

@@ -7,6 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 from rest_framework import routers
 from core.health_views import health_view, organization_config_view, ready_view
+from jambo_rafiki.views import home_view
 
 # Create a router for API endpoints
 router = routers.DefaultRouter()
@@ -26,6 +27,9 @@ api_patterns = [
 ]
 
 urlpatterns = [
+    # Home page
+    path('', home_view, name='home'),
+
     # Admin
     path('admin/', admin.site.urls),
 
