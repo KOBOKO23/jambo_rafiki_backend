@@ -316,17 +316,9 @@ def _validate_production_email_configuration() -> None:
 
 _validate_production_email_configuration()
 
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='benjaminoyoo182@gmail.com')
-ADMIN_NOTIFICATION_EMAILS = config(
-    'ADMIN_NOTIFICATION_EMAILS',
-    default='benjaminoyoo182@gmail.com,infodirector@jamborafiki.org,inforinternationaldirector@jamborafiki.org,email@jamborafiki.org',
-    cast=Csv(),
-)
-ADMIN_NOTIFICATION_EMAILS = [email.strip() for email in ADMIN_NOTIFICATION_EMAILS if email and email.strip()]
-ADMIN_EMAIL = config(
-    'ADMIN_EMAIL',
-    default=ADMIN_NOTIFICATION_EMAILS[0] if ADMIN_NOTIFICATION_EMAILS else 'infodirector@jamborafiki.org',
-)
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='info@jamborafiki.org')
+ADMIN_NOTIFICATION_EMAILS = ['info@jamborafiki.org']
+ADMIN_EMAIL = config('ADMIN_EMAIL', default='info@jamborafiki.org')
 
 # Public organization identity/contact/banking details for frontend consumption.
 ORGANIZATION_DOMAIN = config('ORGANIZATION_DOMAIN', default='www.jamborafiki.org')
