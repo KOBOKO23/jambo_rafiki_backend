@@ -223,15 +223,22 @@ REST_FRAMEWORK = {
 }
 
 # CORS Configuration
-# Frontend URL
-FRONTEND_URL = config('FRONTEND_URL', default='https://jamborafiki.vercel.app')
 
+# Frontend URL
+FRONTEND_URL = config('FRONTEND_URL', default='https://www.jamborafiki.org')
+
+# CORS and CSRF origins from environment
 _configured_cors_origins = config('CORS_ALLOWED_ORIGINS', default='', cast=Csv())
 if _configured_cors_origins:
     CORS_ALLOWED_ORIGINS = [origin.strip().rstrip('/') for origin in _configured_cors_origins if origin]
 else:
-    # If not explicitly configured, trust the primary frontend origin by default.
     CORS_ALLOWED_ORIGINS = [FRONTEND_URL.rstrip('/')]
+
+_configured_csrf_trusted = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
+if _configured_csrf_trusted:
+    CSRF_TRUSTED_ORIGINS = [origin.strip().rstrip('/') for origin in _configured_csrf_trusted if origin]
+else:
+    CSRF_TRUSTED_ORIGINS = [FRONTEND_URL.rstrip('/')]
 
 if DEBUG:
     for dev_origin in [
@@ -243,9 +250,10 @@ if DEBUG:
         normalized = dev_origin.rstrip('/')
         if normalized not in CORS_ALLOWED_ORIGINS:
             CORS_ALLOWED_ORIGINS.append(normalized)
+        if normalized not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(normalized)
 
 CORS_ALLOW_CREDENTIALS = True
-
 CORS_ALLOW_METHODS = [
     'DELETE',
     'GET',
@@ -254,7 +262,6 @@ CORS_ALLOW_METHODS = [
     'POST',
     'PUT',
 ]
-
 CORS_ALLOW_HEADERS = [
     'accept',
     'accept-encoding',
