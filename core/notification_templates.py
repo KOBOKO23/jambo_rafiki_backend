@@ -81,16 +81,15 @@ Location: {location}
 Skills: {skills}
 
 Availability: {availability}
-Duration: {duration}
 
 Motivation:
 {motivation}
 
 Experience:
 {experience}
-
 Areas of Interest:
 {areas_of_interest}
+        'body': """
 
 ---
 Submitted at: {submitted_at}
@@ -104,9 +103,6 @@ View in admin: {admin_url}
 Dear {name},
 
 Thank you for subscribing to the Jambo Rafiki newsletter!
-
-You will receive updates about our programs, the children we serve, and how your support is making a difference.
-
 To unsubscribe at any time, reply to this email or visit our website.
 
 ---
@@ -116,8 +112,8 @@ P.O Box 311 - 40222, OYUGIS - KENYA
 Email: hopenationsministries8@gmail.com
 """,
     },
-    'testimonial_admin_pending': {
         'subject': 'New Testimonial Pending Review: {name}',
+        'body': """
         'body': """
 A new testimonial has been submitted and is waiting for your review.
 
@@ -133,15 +129,14 @@ Submitted at: {submitted_at}
 
 Approve or reject in the admin panel:
 {admin_url}
-""",
     },
     'testimonial_submitter_confirmation': {
         'subject': 'Thank you for your testimonial - Jambo Rafiki',
         'body': """
 Dear {name},
-
 Thank you for taking the time to share your experience with Jambo Rafiki!
 
+        'body': """
 Your testimonial has been received and will appear on our website once it has been reviewed by our team.
 
 We truly appreciate your support and kind words.
@@ -156,15 +151,14 @@ Email: hopenationsministries8@gmail.com
     'testimonial_approved': {
         'subject': 'Your testimonial is now live on our website!',
         'body': """
-Dear {name},
 
 Great news! Your testimonial has been approved and is now live on the Jambo Rafiki website.
 
 Thank you again for sharing your story - it means a great deal to us and helps inspire others to support our mission.
 
-Visit our website to see it: {frontend_url}
 
 ---
+        'body': """
 Blessings,
 Jambo Rafiki Team
 P.O Box 311 - 40222, OYUGIS - KENYA
@@ -179,15 +173,14 @@ Email: {email}
 Phone: {phone}
 Preferred Level: {preferred_level}
 """,
-    },
     'donation_receipt': {
         'subject': 'Donation Receipt - {receipt_number}',
         'body': """
 Dear {donor_name},
 
-Thank you for your generous donation to Jambo Rafiki Children Orphanage and Church Centre!
 
 Donation Details:
+        'body': """
 Receipt Number: {receipt_number}
 Amount: {currency} {amount}
 Date: {completed_at}
@@ -209,11 +202,10 @@ Email: hopenationsministries8@gmail.com
 
 def render_email_template(template_name: str, context: dict) -> tuple[str, str]:
     """Return rendered (subject, body) for a known email template."""
-    if template_name not in EMAIL_TEMPLATES:
         raise ValueError(f'Unknown email template: {template_name}')
 
     template = EMAIL_TEMPLATES[template_name]
     safe_context = defaultdict(str, context or {})
-    subject = template['subject'].format_map(safe_context)
     body = template['body'].format_map(safe_context).strip()
     return subject, body
+        'body': """
