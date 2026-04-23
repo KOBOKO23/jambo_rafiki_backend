@@ -1,5 +1,14 @@
-envVarGroups:
-  - name: jamborafiki-shared
+services:
+  - type: web
+    name: jamborafikibackend-web
+    env: python
+    plan: starter
+    region: oregon
+    rootDir: .
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
+    preDeployCommand: python manage.py migrate --noinput
+    startCommand: gunicorn jambo_rafiki.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 60
+    healthCheckPath: /ready/
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.11
@@ -9,6 +18,8 @@ envVarGroups:
         value: "False"
       - key: FRONTEND_URL
         value: https://jamborafiki.org
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://jamborafiki.org,https://www.jamborafiki.org
       - key: USE_S3_MEDIA
         value: "False"
       - key: LOG_LEVEL
@@ -27,17 +38,14 @@ envVarGroups:
         value: jamborafiki.org,www.jamborafiki.org,api.jamborafiki.org,jamborafikibackend-web.onrender.com
       - key: CSRF_TRUSTED_ORIGINS
         value: https://jamborafiki.org,https://www.jamborafiki.org,https://api.jamborafiki.org
-      # MPesa - fill these in on the Render dashboard
       - key: MPESA_ENVIRONMENT
         value: sandbox
-      - key: MPESA_SHORTCODE
-        value: "174379"
-      - key: MPESA_CALLBACK_SIGNATURE_HEADER
-        value: X-MPESA-SIGNATURE
       - key: MPESA_CONSUMER_KEY
         sync: false
       - key: MPESA_CONSUMER_SECRET
         sync: false
+      - key: MPESA_SHORTCODE
+        value: "174379"
       - key: MPESA_PASSKEY
         sync: false
       - key: MPESA_CALLBACK_URL
@@ -46,24 +54,8 @@ envVarGroups:
         sync: false
       - key: MPESA_CALLBACK_SIGNATURE_SECRET
         sync: false
-
-services:
-  - type: web
-    name: jamborafikibackend-web
-    env: python
-    plan: starter
-    region: oregon
-    rootDir: .
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
-    preDeployCommand: python manage.py migrate --noinput
-    startCommand: gunicorn jambo_rafiki.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 60
-    healthCheckPath: /ready/
-    envVarGroups:
-      - jamborafiki-shared
-    envVars:
-      # Web-only: HTTP-facing vars not needed by the worker
-      - key: CORS_ALLOWED_ORIGINS
-        value: https://jamborafiki.org,https://www.jamborafiki.org
+      - key: MPESA_CALLBACK_SIGNATURE_HEADER
+        value: X-MPESA-SIGNATURE
 
   - type: worker
     name: jamborafikibackend-worker
@@ -73,9 +65,53 @@ services:
     rootDir: .
     buildCommand: pip install -r requirements.txt
     startCommand: python manage.py process_jobs
-    envVarGroups:
-      - jamborafiki-shared
-    # No extra envVars needed - everything comes from the group
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.11
+      - key: DJANGO_ENV
+        value: production
+      - key: DEBUG
+        value: "False"
+      - key: FRONTEND_URL
+        value: https://jamborafiki.org
+      - key: CORS_ALLOWED_ORIGINS
+        value: https://jamborafiki.org,https://www.jamborafiki.org
+      - key: USE_S3_MEDIA
+        value: "False"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: SECURITY_LOG_LEVEL
+        value: WARNING
+      - key: EMAIL_BACKEND
+        value: django.core.mail.backends.console.EmailBackend
+      - key: SECRET_KEY
+        sync: false          # paste web service's SECRET_KEY value here after first deploy
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jambo-rafiki-postgres
+          property: connectionString
+      - key: ALLOWED_HOSTS
+        value: jamborafiki.org,www.jamborafiki.org,api.jamborafiki.org,jamborafikibackend-web.onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        value: https://jamborafiki.org,https://www.jamborafiki.org,https://api.jamborafiki.org
+      - key: MPESA_ENVIRONMENT
+        value: sandbox
+      - key: MPESA_CONSUMER_KEY
+        sync: false
+      - key: MPESA_CONSUMER_SECRET
+        sync: false
+      - key: MPESA_SHORTCODE
+        value: "174379"
+      - key: MPESA_PASSKEY
+        sync: false
+      - key: MPESA_CALLBACK_URL
+        sync: false
+      - key: MPESA_CALLBACK_TOKEN
+        sync: false
+      - key: MPESA_CALLBACK_SIGNATURE_SECRET
+        sync: false
+      - key: MPESA_CALLBACK_SIGNATURE_HEADER
+        value: X-MPESA-SIGNATURE
 
 databases:
   - name: jambo-rafiki-postgres
