@@ -9,8 +9,10 @@ router = DefaultRouter()
 router.register(r'', DonationViewSet, basename='donation')
 
 urlpatterns = [
-    path('', include(router.urls)),
+    # Standalone views MUST come before router.urls to avoid being shadowed
     path('mpesa-callback/', mpesa_callback, name='mpesa-callback'),
     path('stripe-webhook/', stripe_webhook, name='stripe-webhook'),
     path('bank-transfer-request/', bank_transfer_request, name='bank-transfer-request'),
+    # Router URLs last
+    path('', include(router.urls)),
 ]
