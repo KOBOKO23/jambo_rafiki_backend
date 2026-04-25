@@ -5,8 +5,10 @@ services:
     plan: starter
     region: oregon
     rootDir: .
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput
-    preDeployCommand: python manage.py migrate --noinput
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py migrate --noinput
+      python manage.py collectstatic --noinput
     startCommand: gunicorn jambo_rafiki.wsgi:application --bind 0.0.0.0:$PORT --workers 3 --timeout 60
     healthCheckPath: /ready/
     envVars:
@@ -63,7 +65,9 @@ services:
     plan: starter
     region: oregon
     rootDir: .
-    buildCommand: pip install -r requirements.txt
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py migrate --noinput
     startCommand: python manage.py process_jobs
     envVars:
       - key: PYTHON_VERSION
@@ -85,7 +89,7 @@ services:
       - key: EMAIL_BACKEND
         value: django.core.mail.backends.console.EmailBackend
       - key: SECRET_KEY
-        sync: false          # paste web service's SECRET_KEY value here after first deploy
+        sync: false
       - key: DATABASE_URL
         fromDatabase:
           name: jambo-rafiki-postgres
@@ -111,7 +115,7 @@ services:
       - key: MPESA_CALLBACK_SIGNATURE_SECRET
         sync: false
       - key: MPESA_CALLBACK_SIGNATURE_HEADER
-        value: X-MPESA-SIGNATURE
+        value: false
 
 databases:
   - name: jambo-rafiki-postgres
