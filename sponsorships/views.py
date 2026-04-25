@@ -1,11 +1,12 @@
 import logging
 
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, authentication_classes
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.response import Response
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
+from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
 from core.audit import log_audit_event
 from core.notification_service import queue_template_email
@@ -19,9 +20,7 @@ from .serializers import (
 logger = logging.getLogger(__name__)
 PUBLIC_CACHE_TTL = 60 * 5 if not settings.DEBUG else 0
 
-# -------------------------
-# Public Views
-# -------------------------
+
 @method_decorator(cache_page(PUBLIC_CACHE_TTL), name='list')
 @method_decorator(cache_page(PUBLIC_CACHE_TTL), name='retrieve')
 class ChildViewSet(viewsets.ReadOnlyModelViewSet):
@@ -29,9 +28,7 @@ class ChildViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = ChildSerializer
     permission_classes = [AllowAny]
 
-# -------------------------
-# Admin Views
-# -------------------------
+
 class SponsorViewSet(viewsets.ModelViewSet):
     queryset = Sponsor.objects.all()
     serializer_class = SponsorSerializer
@@ -117,17 +114,15 @@ class SponsorshipViewSet(viewsets.ModelViewSet):
         return super().perform_destroy(instance)
 
 
-# -------------------------
-# Public POST endpoint for interest
-# -------------------------
+@csrf_exempt
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 def register_interest(request):
     serializer = SponsorshipInterestSerializer(data=request.data)
     if serializer.is_valid():
         interest = serializer.save()
 
-        # Send email notification
         try:
             queue_template_email(
                 'sponsorship_interest_admin',
@@ -141,7 +136,13 @@ def register_interest(request):
                 from_email=settings.DEFAULT_FROM_EMAIL,
             )
         except Exception:
-            logger.exception("Failed to send sponsorship interest notification for interest_id=%s", interest.id)
+            logger.exception(
+                "Failed to send sponsorship interest notification for interest_id=%s",
+                interest.id,
+            )
 
-        return Response({'message': 'Interest registered successfully!'}, status=status.HTTP_201_CREATED)
+        return Response(
+            {'message': 'Interest registered successfully!'},
+            status=status.HTTP_201_CREATED,
+        )
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
