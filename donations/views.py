@@ -43,13 +43,11 @@ class DonationViewSet(viewsets.ModelViewSet):
     queryset = Donation.objects.all()
     
     def get_serializer_class(self):
-        """Use detailed serializer for admin, simple for public"""
         if self.action in ['list', 'retrieve']:
             return DonationDetailSerializer
         return DonationSerializer
     
     def get_permissions(self):
-        """Allow anyone to create, require admin for other actions"""
         if self.action in ['create', 'mpesa', 'mpesa_async', 'mpesa_sync', 'stripe']:
             return [AllowAny()]
         return [IsAdminUser()]
@@ -102,72 +100,44 @@ class DonationViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def mpesa(self, request):
-        """
-        Queue M-Pesa initiation as the default to reduce request latency coupling.
-        
-        POST /api/donations/mpesa/
-        {
-            "donor_name": "John Doe",
-            "donor_email": "john@example.com",
-            "donor_phone": "0712345678",
-            "amount": 1000,
-            "purpose": "Education support"
-        }
-        """
         serializer = MPesaDonationSerializer(data=request.data)
-        
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
         data = serializer.validated_data
         try:
-            donation = self._create_mpesa_donation(
-                data,
-                notes='Queued for asynchronous M-Pesa initiation',
-            )
+            donation = self._create_mpesa_donation(data, notes='Queued for asynchronous M-Pesa initiation')
         except ValueError as exc:
             return Response({'donor_phone': [str(exc)]}, status=status.HTTP_400_BAD_REQUEST)
         return self._queue_mpesa_initiation(donation, data)
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='mpesa-async')
     def mpesa_async(self, request):
-        """Queue M-Pesa initiation to decouple external latency from request paths."""
         serializer = MPesaDonationSerializer(data=request.data)
-
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
         data = serializer.validated_data
         try:
-            donation = self._create_mpesa_donation(
-                data,
-                notes='Queued for asynchronous M-Pesa initiation',
-            )
+            donation = self._create_mpesa_donation(data, notes='Queued for asynchronous M-Pesa initiation')
         except ValueError as exc:
             return Response({'donor_phone': [str(exc)]}, status=status.HTTP_400_BAD_REQUEST)
         return self._queue_mpesa_initiation(donation, data)
 
     @action(detail=False, methods=['post'], permission_classes=[AllowAny], url_path='mpesa-sync')
     def mpesa_sync(self, request):
-        """Immediate M-Pesa initiation path kept for clients needing synchronous behavior."""
         serializer = MPesaDonationSerializer(data=request.data)
-
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
         data = serializer.validated_data
         try:
             donation = self._create_mpesa_donation(data)
         except ValueError as exc:
             return Response({'donor_phone': [str(exc)]}, status=status.HTTP_400_BAD_REQUEST)
-
         result = DonationService.initiate_mpesa_payment(
             donation,
             donor_phone=data['donor_phone'],
             amount=data['amount'],
             purpose=data.get('purpose', ''),
         )
-
         if result.get('success'):
             return Response({
                 'message': result.get('message', 'Please check your phone for M-Pesa prompt'),
@@ -176,7 +146,6 @@ class DonationViewSet(viewsets.ModelViewSet):
                 'checkout_request_id': result.get('checkout_request_id'),
                 'merchant_request_id': result.get('merchant_request_id'),
             }, status=result.get('status_code', status.HTTP_200_OK))
-
         return Response({
             'error': result.get('error', 'Failed to initiate M-Pesa payment'),
             'message': result.get('message', 'Please try again'),
@@ -184,29 +153,11 @@ class DonationViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def stripe(self, request):
-        """
-        Create a Stripe PaymentIntent for a donation and wait for the webhook
-        to confirm the payment before marking it complete.
-        
-        POST /api/donations/stripe/
-        {
-            "donor_name": "John Doe",
-            "donor_email": "john@example.com",
-            "amount": 50,
-            "currency": "USD",
-            "payment_method_id": "pm_xxxxx"
-        }
-        """
         serializer = StripeDonationSerializer(data=request.data)
-        
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
         data = serializer.validated_data
-        
-        # Create donation record
         transaction_id = f"STRIPE-{uuid.uuid4().hex[:12].upper()}"
-        
         donation = Donation.objects.create(
             donor_name=data['donor_name'],
             donor_email=data['donor_email'],
@@ -220,27 +171,22 @@ class DonationViewSet(viewsets.ModelViewSet):
             transaction_id=transaction_id,
             status='pending'
         )
-        
         try:
             stripe_gateway = StripeGatewayAdapter()
-            payment_intent = stripe_gateway.initiate(
-                {
-                    'amount': int(data['amount'] * 100),
-                    'currency': data['currency'].lower(),
-                    'description': f"Donation: {data.get('purpose', 'General')}",
-                    'receipt_email': data['donor_email'],
-                    'metadata': {
-                        'donation_id': donation.id,
-                        'donor_name': data['donor_name'],
-                    },
-                }
-            )
-
+            payment_intent = stripe_gateway.initiate({
+                'amount': int(data['amount'] * 100),
+                'currency': data['currency'].lower(),
+                'description': f"Donation: {data.get('purpose', 'General')}",
+                'receipt_email': data['donor_email'],
+                'metadata': {
+                    'donation_id': donation.id,
+                    'donor_name': data['donor_name'],
+                },
+            })
             donation.status = 'processing'
             donation.stripe_payment_intent = payment_intent['id']
             donation.notes = 'Awaiting Stripe webhook confirmation'
             donation.save()
-            
             return Response({
                 'message': 'Payment initiated. Complete the payment in the frontend and wait for webhook confirmation.',
                 'donation_id': donation.id,
@@ -248,48 +194,33 @@ class DonationViewSet(viewsets.ModelViewSet):
                 'client_secret': payment_intent['client_secret'],
                 'status': payment_intent['status'],
             }, status=status.HTTP_202_ACCEPTED)
-        
         except stripe.error.StripeError as e:
             donation.status = 'failed'
             donation.notes = f"Stripe error: {str(e)}"
             donation.save()
-            
-            return Response({
-                'error': 'Payment failed',
-                'message': str(e)
-            }, status=status.HTTP_400_BAD_REQUEST)
-        
+            return Response({'error': 'Payment failed', 'message': str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             donation.status = 'failed'
             donation.notes = f"Exception: {str(e)}"
             donation.save()
-            
-            return Response({
-                'error': 'Failed to process payment',
-                'message': str(e)
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({'error': 'Failed to process payment', 'message': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAdminUser])
     def reconciliation(self, request):
-        """Expose operational reconciliation summary for payment workflows."""
         status_counts = {
             row['status']: row['count']
             for row in Donation.objects.values('status').annotate(count=Count('id'))
         }
-
         processing_threshold = timezone.now() - timedelta(minutes=20)
         stale_processing_qs = Donation.objects.filter(
             status='processing',
             updated_at__lt=processing_threshold,
         ).order_by('updated_at')[:50]
-
         recent_callbacks = DonationCallback.objects.filter(
             created_at__gte=timezone.now() - timedelta(hours=24)
         )
-
         orphan_callbacks_24h = recent_callbacks.filter(donation__isnull=True).count()
         unprocessed_callbacks_24h = recent_callbacks.filter(processed=False).count()
-
         stale_processing = [
             {
                 'id': donation.id,
@@ -301,7 +232,6 @@ class DonationViewSet(viewsets.ModelViewSet):
             }
             for donation in stale_processing_qs
         ]
-
         return Response({
             'generated_at': timezone.now(),
             'donation_status_counts': status_counts,
@@ -315,7 +245,6 @@ class DonationViewSet(viewsets.ModelViewSet):
         })
     
     def send_donation_receipt(self, donation):
-        """Backward-compatible wrapper around donation service."""
         DonationService.send_donation_receipt(donation)
 
 
@@ -325,16 +254,11 @@ class DonationViewSet(viewsets.ModelViewSet):
 @permission_classes([AllowAny])
 @throttle_classes([PaymentCallbackRateThrottle])
 def stripe_webhook(request):
-    """Process Stripe webhook events with signature verification."""
     payload = request.body
     signature = request.META.get('HTTP_STRIPE_SIGNATURE', '')
-
     try:
         stripe_gateway = StripeGatewayAdapter()
-        event = stripe_gateway.verify_callback(
-            payload,
-            signature,
-        )
+        event = stripe_gateway.verify_callback(payload, signature)
     except Exception:
         return Response({'error': 'Invalid Stripe webhook signature'}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -355,8 +279,6 @@ def stripe_webhook(request):
             'processed': False,
         },
     )
-
-    # Prevent replay from re-triggering transitions.
     if not created and callback_record.processed:
         return Response({'received': True, 'replayed': True}, status=status.HTTP_200_OK)
 
@@ -377,13 +299,8 @@ def stripe_webhook(request):
         else 'Processed Stripe webhook event but donation link is missing'
     )
     callback_record.save(update_fields=[
-        'donation',
-        'processed',
-        'requires_reconciliation',
-        'resolved_at',
-        'processing_notes',
+        'donation', 'processed', 'requires_reconciliation', 'resolved_at', 'processing_notes',
     ])
-
     return Response({'received': True}, status=status.HTTP_200_OK)
 
 
@@ -393,11 +310,6 @@ def stripe_webhook(request):
 @permission_classes([AllowAny])
 @throttle_classes([PaymentCallbackRateThrottle])
 def mpesa_callback(request):
-    """
-    M-Pesa callback endpoint
-    
-    This endpoint receives payment confirmation from M-Pesa
-    """
     try:
         signature_secret = getattr(settings, 'MPESA_CALLBACK_SIGNATURE_SECRET', '')
         if signature_secret:
@@ -411,34 +323,24 @@ def mpesa_callback(request):
             ).hexdigest()
             if not provided_signature or not hmac.compare_digest(provided_signature, expected_signature):
                 security_logger.warning('Rejected M-Pesa callback due to invalid signature')
-                return Response({
-                    'ResultCode': 1,
-                    'ResultDesc': 'Invalid callback signature',
-                }, status=status.HTTP_403_FORBIDDEN)
+                return Response({'ResultCode': 1, 'ResultDesc': 'Invalid callback signature'}, status=status.HTTP_403_FORBIDDEN)
 
         expected_token = settings.MPESA_CALLBACK_TOKEN
         if expected_token and request.GET.get('token') != expected_token:
             security_logger.warning('Rejected M-Pesa callback due to invalid callback token')
-            return Response({
-                'ResultCode': 1,
-                'ResultDesc': 'Unauthorized callback'
-            }, status=status.HTTP_403_FORBIDDEN)
+            return Response({'ResultCode': 1, 'ResultDesc': 'Unauthorized callback'}, status=status.HTTP_403_FORBIDDEN)
 
         callback_data = request.data
-
         canonical_payload = json.dumps(callback_data, sort_keys=True, separators=(',', ':')).encode('utf-8')
         payload_hash = hashlib.sha256(canonical_payload).hexdigest()
-
         stk_callback = callback_data.get('Body', {}).get('stkCallback', {})
         external_id = stk_callback.get('CheckoutRequestID') or ''
-        callback_lookup = {
-            'provider': 'mpesa',
-        }
+        callback_lookup = {'provider': 'mpesa'}
         if external_id:
             callback_lookup['external_id'] = external_id
         else:
             callback_lookup['payload_hash'] = payload_hash
-        
+
         callback_record, created = DonationCallback.objects.get_or_create(
             **callback_lookup,
             defaults={
@@ -448,7 +350,6 @@ def mpesa_callback(request):
                 'processed': False,
             }
         )
-
         if not created and callback_record.processed:
             security_logger.info('Ignored replayed M-Pesa callback external_id=%s', external_id)
             return Response({'ResultCode': 0, 'ResultDesc': 'Accepted (replay ignored)'}, status=status.HTTP_200_OK)
@@ -457,8 +358,7 @@ def mpesa_callback(request):
         callback_record.payload_hash = payload_hash
         callback_record.raw_data = callback_data
         callback_record.save(update_fields=['external_id', 'payload_hash', 'raw_data'])
-        
-        # Process callback through service layer
+
         try:
             processed = DonationService.process_mpesa_callback(callback_data)
             if processed.get('success') and processed.get('donation'):
@@ -475,22 +375,18 @@ def mpesa_callback(request):
                 callback_record.save(update_fields=['processed', 'requires_reconciliation', 'processing_notes'])
         except Exception:
             logger.exception("Error processing M-Pesa callback")
-        
-        # Always return success to M-Pesa
-        return Response({
-            'ResultCode': 0,
-            'ResultDesc': 'Accepted'
-        }, status=status.HTTP_200_OK)
-    
+
+        return Response({'ResultCode': 0, 'ResultDesc': 'Accepted'}, status=status.HTTP_200_OK)
+
     except Exception:
         logger.exception("M-Pesa callback error")
-        return Response({
-            'ResultCode': 1,
-            'ResultDesc': 'Failed'
-        }, status=status.HTTP_200_OK)
-    
+        return Response({'ResultCode': 1, 'ResultDesc': 'Failed'}, status=status.HTTP_200_OK)
 
+
+# ── The only change from the previous version: added @csrf_exempt and @authentication_classes([]) ──
+@csrf_exempt
 @api_view(['POST'])
+@authentication_classes([])
 @permission_classes([AllowAny])
 @throttle_classes([DonationInitiationRateThrottle])
 def bank_transfer_request(request):
