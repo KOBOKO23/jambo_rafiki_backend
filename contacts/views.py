@@ -4,7 +4,7 @@ Contact views
 import logging
 
 from rest_framework import viewsets, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, throttle_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
 from django.conf import settings
@@ -16,6 +16,10 @@ from .serializers import ContactSubmissionSerializer, ContactSubmissionDetailSer
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.authentication import BasicAuthentication
+from django.http import HttpResponseRedirect
+from rest_framework.permissions import AllowAny
+from rest_framework.decorators import permission_classes, api_view, throttle_classes
+
 
 
 logger = logging.getLogger(__name__)
@@ -128,3 +132,12 @@ class ContactSubmissionViewSet(viewsets.ModelViewSet):
             )
         except Exception:
             logger.exception("Failed to send contact auto-reply for contact_submission_id=%s", submission.id)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+@throttle_classes([PublicFormRateThrottle])
+def contact_call_redirect(request):
+    """Redirect to contact page on frontend"""
+    phone_number = settings.CONTACT_PHONE_NUMBER
+    return HttpResponseRedirect(f"tel:{phone_number}")
