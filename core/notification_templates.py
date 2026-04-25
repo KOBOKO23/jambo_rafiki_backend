@@ -1,9 +1,6 @@
 """Shared email templates used across notification workflows."""
-
 from __future__ import annotations
-
 from collections import defaultdict
-
 
 EMAIL_TEMPLATES = {
     'contact_admin_notification': {
@@ -20,7 +17,6 @@ Message:
 
 ---
 Submitted at: {submitted_at}
-
 View in admin: {admin_url}
 """,
     },
@@ -37,7 +33,6 @@ Your message:
 ---
 Blessings,
 Jambo Rafiki Team
-
 P.O Box 311 - 40222, OYUGIS - KENYA
 """,
     },
@@ -56,7 +51,6 @@ Your Application Details:
 ---
 Blessings,
 Jambo Rafiki Team
-
 P.O Box 311 - 40222, OYUGIS - KENYA
 Email: hopenationsministries8@gmail.com
 """,
@@ -69,7 +63,6 @@ A new volunteer application has been submitted.
 Name: {name}
 Email: {email}
 Phone: {phone}
-
 Skills: {skills}
 
 Areas of Interest:
@@ -83,7 +76,6 @@ Experience:
 
 ---
 Submitted at: {submitted_at}
-
 View in admin: {admin_url}
 """,
     },
@@ -97,7 +89,6 @@ To unsubscribe at any time, reply to this email or visit our website.
 ---
 Blessings,
 Jambo Rafiki Team
-
 P.O Box 311 - 40222, OYUGIS - KENYA
 """,
     },
@@ -111,7 +102,6 @@ Testimonial:
 
 ---
 Submitted at: {submitted_at}
-
 Approve or reject in the admin panel: {admin_url}
 """,
     },
@@ -124,7 +114,6 @@ We truly appreciate your support and kind words.
 
 ---
 Jambo Rafiki Team
-
 P.O Box 311 - 40222, OYUGIS - KENYA
 """,
     },
@@ -135,7 +124,6 @@ Thank you again for sharing your story - it means a great deal to us and helps i
 
 ---
 Jambo Rafiki Team
-
 P.O Box 311 - 40222, OYUGIS - KENYA
 """,
     },
@@ -156,7 +144,6 @@ Preferred Level: {preferred_level}
 Dear {donor_name},
 
 Donation Details:
-
 Receipt Number: {receipt_number}
 Amount: {currency} {amount}
 Date: {completed_at}
@@ -171,12 +158,44 @@ P.O Box 311 - 40222, OYUGIS - KENYA
 Email: hopenationsministries8@gmail.com
 """,
     },
+    'bank_transfer_details': {
+        'subject': 'Bank Transfer Details - Jambo Rafiki',
+        'body': """
+Dear {donor_name},
+
+Thank you for your intention to donate to Jambo Rafiki Children Orphanage.
+
+Here are our bank transfer details for your donation of KES {amount} towards {purpose}:
+
+BANK ACCOUNT DETAILS
+--------------------
+Account Name:   {account_name}
+Account Number: {account_number}
+Bank Code:      {bank_code}
+Branch Code:    {branch_code}
+SWIFT / BIC:    {swift_code}
+
+IMPORTANT: Please use the following reference when making your transfer:
+Reference: {reference}
+
+This helps us match your transfer to your donation record.
+
+Once you have made the transfer, please reply to this email or contact us at
+info@jamborafiki.org with your transfer confirmation so we can acknowledge your donation.
+
+Your generosity transforms lives. Thank you!
+
+---
+Jambo Rafiki Children Orphanage and Church Centre
+P.O Box 311 - 40222, OYUGIS - KENYA
+Email: info@jamborafiki.org
+""",
+    },
 }
 
 
 def render_email_template(template_name: str, context: dict) -> tuple[str, str]:
     """Return rendered (subject, body) for a known email template."""
-
     template = EMAIL_TEMPLATES[template_name]
     safe_context = defaultdict(str, context or {})
     subject = template['subject'].format_map(safe_context)

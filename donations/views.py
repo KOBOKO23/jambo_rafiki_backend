@@ -29,6 +29,7 @@ from core.job_queue import enqueue_mpesa_initiation
 from .gateways import StripeGatewayAdapter
 from .services import DonationService
 from core.throttles import DonationInitiationRateThrottle, PaymentCallbackRateThrottle
+from core.notification_service import queue_template_email
 
 
 logger = logging.getLogger(__name__)
@@ -487,3 +488,65 @@ def mpesa_callback(request):
             'ResultCode': 1,
             'ResultDesc': 'Failed'
         }, status=status.HTTP_200_OK)
+    
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
+@throttle_classes([DonationInitiationRateThrottle])
+def bank_transfer_request(request):
+    """
+    Send bank transfer details privately to donor via email.
+    No account details are exposed in the response.
+    """
+    donor_name = request.data.get('donor_name', '').strip()
+    donor_email = request.data.get('donor_email', '').strip()
+    amount = request.data.get('amount', '').strip()
+    purpose = request.data.get('purpose', 'General Support').strip()
+
+    errors = {}
+    if not donor_name:
+        errors['donor_name'] = 'This field is required.'
+    if not donor_email:
+        errors['donor_email'] = 'This field is required.'
+    if not amount:
+        errors['amount'] = 'This field is required.'
+    else:
+        try:
+            amount_val = float(amount)
+            if amount_val < 1:
+                errors['amount'] = 'Minimum amount is 1.'
+        except ValueError:
+            errors['amount'] = 'Enter a valid amount.'
+
+    if errors:
+        return Response(errors, status=status.HTTP_400_BAD_REQUEST)
+
+    reference = f"JR-BANK-{uuid.uuid4().hex[:8].upper()}"
+
+    try:
+        queue_template_email(
+            'bank_transfer_details',
+            context={
+                'donor_name':     donor_name,
+                'amount':         amount,
+                'purpose':        purpose,
+                'reference':      reference,
+                'account_name':   settings.ORGANIZATION_BANK_ACCOUNT_NAME,
+                'account_number': settings.ORGANIZATION_BANK_ACCOUNT_NUMBER,
+                'bank_code':      settings.ORGANIZATION_BANK_CODE,
+                'branch_code':    settings.ORGANIZATION_BANK_BRANCH_CODE,
+                'swift_code':     settings.ORGANIZATION_BANK_SWIFT_CODE,
+            },
+            recipient_list=[donor_email],
+        )
+    except Exception:
+        logger.exception('Failed to queue bank transfer details email for %s', donor_email)
+        return Response(
+            {'error': 'Failed to send email. Please try again or contact us directly.'},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    return Response({
+        'message': f'Bank transfer details have been sent to {donor_email}. Please check your inbox.',
+        'reference': reference,
+    }, status=status.HTTP_200_OK)
