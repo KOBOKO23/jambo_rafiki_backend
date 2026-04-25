@@ -13,11 +13,15 @@ from core.notification_service import queue_template_email
 from core.throttles import PublicFormRateThrottle
 from .models import ContactSubmission
 from .serializers import ContactSubmissionSerializer, ContactSubmissionDetailSerializer
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from rest_framework.authentication import BasicAuthentication
 
 
 logger = logging.getLogger(__name__)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class ContactSubmissionViewSet(viewsets.ModelViewSet):
     """
     ViewSet for contact form submissions.

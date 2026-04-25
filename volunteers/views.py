@@ -13,10 +13,13 @@ from core.throttles import PublicFormRateThrottle
 from .models import VolunteerApplication
 from .serializers import VolunteerApplicationSerializer, VolunteerApplicationDetailSerializer
 from .services import VolunteerService
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 
 logger = logging.getLogger(__name__)
 
+@method_decorator(csrf_exempt, name='dispatch')
 
 class VolunteerApplicationViewSet(viewsets.ModelViewSet):
     """

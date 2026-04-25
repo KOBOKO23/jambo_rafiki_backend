@@ -12,11 +12,13 @@ from core.notification_service import queue_template_email
 from core.throttles import PublicFormRateThrottle
 from .models import NewsletterSubscriber
 from .serializers import NewsletterSubscribeSerializer, NewsletterSubscriberSerializer
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
 
 logger = logging.getLogger(__name__)
 
-
+@method_decorator(csrf_exempt, name='dispatch')
 class NewsletterSubscriberViewSet(viewsets.ModelViewSet):
     """
     ViewSet for newsletter subscribers.
