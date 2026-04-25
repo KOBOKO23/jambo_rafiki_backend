@@ -54,7 +54,7 @@ def organization_config_view(request):
             },
             'contact': {
                 'email': settings.ORGANIZATION_PUBLIC_EMAIL,
-                'call_redirect_url': '/api/contacts/call/',
+                'call_redirect_url': '/api/contact/call/',
             },
             'bank_account': {
                 'bank_code': settings.ORGANIZATION_BANK_CODE,
