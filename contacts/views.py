@@ -34,6 +34,7 @@ class ContactSubmissionViewSet(viewsets.ModelViewSet):
     - GET: Retrieve specific submission
     - PATCH: Mark as read
     """
+    authentication_classes = [BasicAuthentication]
     queryset = ContactSubmission.objects.all()
     
     def get_serializer_class(self):
