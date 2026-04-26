@@ -68,7 +68,7 @@ services:
     buildCommand: |
       pip install -r requirements.txt
       python manage.py migrate --noinput
-    startCommand: python manage.py process_jobs
+    startCommand: python manage.py process_jobs --loop --sleep-seconds=5
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.11
@@ -115,7 +115,7 @@ services:
       - key: MPESA_CALLBACK_SIGNATURE_SECRET
         sync: false
       - key: MPESA_CALLBACK_SIGNATURE_HEADER
-        value: false
+        value: X-MPESA-SIGNATURE
 
 databases:
   - name: jambo-rafiki-postgres
