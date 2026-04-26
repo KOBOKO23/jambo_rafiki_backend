@@ -372,6 +372,8 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
     SESSION_COOKIE_SAMESITE = config('SESSION_COOKIE_SAMESITE', default='None')
     CSRF_COOKIE_SAMESITE = config('CSRF_COOKIE_SAMESITE', default='None')
+    SESSION_COOKIE_DOMAIN = config('SESSION_COOKIE_DOMAIN', default=None) or None
+    CSRF_COOKIE_DOMAIN = config('CSRF_COOKIE_DOMAIN', default=None) or None
 
 _trusted_origins = config('CSRF_TRUSTED_ORIGINS', default='', cast=Csv())
 CSRF_TRUSTED_ORIGINS = [origin.strip().rstrip('/') for origin in _trusted_origins if origin]

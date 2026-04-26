@@ -66,6 +66,10 @@ services:
         value: "Lax"
       - key: SESSION_COOKIE_SECURE
         value: "True"
+      - key: SESSION_COOKIE_DOMAIN
+        value: ""
+      - key: CSRF_COOKIE_DOMAIN
+        value: ""
 
   - type: worker
     name: jamborafikibackend-worker
