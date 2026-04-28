@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_filters',
+    'csp',
     
     # Local apps
     'core',
@@ -56,11 +57,12 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'csp.middleware.CSPMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'core.middleware.RequestIdMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # For static files in production
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',  # Must be before CommonMiddleware
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -369,7 +371,7 @@ if not DEBUG:
     SECURE_REFERRER_POLICY = config('SECURE_REFERRER_POLICY', default='same-origin')
     SECURE_BROWSER_XSS_FILTER = True
     SECURE_CONTENT_TYPE_NOSNIFF = True
-    X_FRAME_OPTIONS = 'DENY'
+    X_FRAME_OPTIONS = 'SAMEORIGIN'
     SESSION_COOKIE_SAMESITE = config('SESSION_COOKIE_SAMESITE', default='None')
     CSRF_COOKIE_SAMESITE = config('CSRF_COOKIE_SAMESITE', default='None')
     SESSION_COOKIE_DOMAIN = config('SESSION_COOKIE_DOMAIN', default=None) or None
@@ -441,3 +443,30 @@ if SENTRY_DSN:
         send_default_pii=False,
         environment=DJANGO_ENV,
     )
+
+CSP_DEFAULT_SRC = ("'self'",)
+
+CSP_FRAME_SRC = (
+    "'self'",
+    "https://www.google.com",
+    "https://*.google.com",
+    "https://js.stripe.com",
+)
+
+CSP_SCRIPT_SRC = (
+    "'self'",
+    "https://js.stripe.com",
+)
+
+CSP_CONNECT_SRC = (
+    "'self'",
+    "https://api.stripe.com",
+    "https://r.stripe.com",
+)
+
+CSP_IMG_SRC = (
+    "'self'",
+    "data:",
+    "https://*.google.com",
+    "https://*.gstatic.com",
+)
