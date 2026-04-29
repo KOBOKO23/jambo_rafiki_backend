@@ -4,10 +4,12 @@ charset-normalizer==3.4.4
 dj-database-url==3.1.0
 Django==5.2.8
 django-cors-headers==4.9.0
+django-csp==4.0
 django-filter==25.2
 djangorestframework==3.16.1
 djangorestframework_simplejwt==5.5.1
 idna==3.11
+packaging==26.2
 pillow==12.1.0
 PyJWT==2.12.1
 python-decouple==3.8
@@ -18,5 +20,3 @@ stripe==14.0.1
 typing_extensions==4.15.0
 urllib3==2.6.0
 whitenoise==6.11.0
-psycopg2-binary==2.9.9
-gunicorn==22.0.0
