@@ -445,28 +445,7 @@ if SENTRY_DSN:
     )
 
 CSP_DEFAULT_SRC = ("'self'",)
-
-CSP_CONNECT_SRC = (
-    "'self'",
-    "https://api.stripe.com",
-    "https://r.stripe.com",
-)
-
-CSP_FRAME_SRC = (
-    "'self'",
-    "https://www.google.com",
-    "https://*.google.com",
-    "https://js.stripe.com",
-)
-
-CSP_IMG_SRC = (
-    "'self'",
-    "data:",
-    "https://*.google.com",
-    "https://*.gstatic.com",
-)
-
-CSP_SCRIPT_SRC = (
-    "'self'",
-    "https://js.stripe.com",
-)
+CSP_SCRIPT_SRC = ("'self'", "https://js.stripe.com")
+CSP_CONNECT_SRC = ("'self'", "https://api.stripe.com", "https://r.stripe.com")
+CSP_FRAME_SRC = ("'self'", "https://www.google.com", "https://*.google.com", "https://js.stripe.com")
+CSP_IMG_SRC = ("'self'", "data:", "https://*.google.com", "https://*.gstatic.com")
