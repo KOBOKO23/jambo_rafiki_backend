@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import EmailValidator, MinValueValidator
 from decimal import Decimal
+from core.image_processing import optimize_uploaded_image
 
 class Child(models.Model):
     GENDER_CHOICES = [('M', 'Male'), ('F', 'Female')]
@@ -19,6 +20,10 @@ class Child(models.Model):
 
     class Meta:
         ordering = ['first_name', 'last_name']
+
+    def save(self, *args, **kwargs):
+        optimize_uploaded_image(self, 'photo')
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"

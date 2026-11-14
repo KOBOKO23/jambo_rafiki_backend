@@ -16,7 +16,7 @@ from .serializers import ContactSubmissionSerializer, ContactSubmissionDetailSer
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.authentication import BasicAuthentication
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from rest_framework.permissions import AllowAny
 from rest_framework.decorators import permission_classes, api_view, throttle_classes
 
@@ -134,10 +134,18 @@ class ContactSubmissionViewSet(viewsets.ModelViewSet):
             logger.exception("Failed to send contact auto-reply for contact_submission_id=%s", submission.id)
 
 
+class TelRedirect(HttpResponseRedirect):
+    """HttpResponseRedirect only allows http(s)/ftp by default."""
+
+    allowed_schemes = ['tel']
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @throttle_classes([PublicFormRateThrottle])
 def contact_call_redirect(request):
-    """Redirect to contact page on frontend"""
-    phone_number = settings.CONTACT_PHONE_NUMBER
-    return HttpResponseRedirect(f"tel:{phone_number}")
+    """Redirect to the organisation's phone number (tel: link)."""
+    phone_number = settings.ORGANIZATION_CALL_REDIRECT_NUMBER
+    if not phone_number:
+        return HttpResponse(status=404)
+    return TelRedirect(f"tel:{phone_number}")

@@ -444,8 +444,13 @@ if SENTRY_DSN:
         environment=DJANGO_ENV,
     )
 
-CSP_DEFAULT_SRC = ("'self'",)
-CSP_SCRIPT_SRC = ("'self'", "https://js.stripe.com")
-CSP_CONNECT_SRC = ("'self'", "https://api.stripe.com", "https://r.stripe.com")
-CSP_FRAME_SRC = ("'self'", "https://www.google.com", "https://*.google.com", "https://js.stripe.com")
-CSP_IMG_SRC = ("'self'", "data:", "https://*.google.com", "https://*.gstatic.com")
+# django-csp >= 4.0 settings format (the old CSP_* names fail the system check).
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'default-src': ("'self'",),
+        'script-src': ("'self'", 'https://js.stripe.com'),
+        'connect-src': ("'self'", 'https://api.stripe.com', 'https://r.stripe.com'),
+        'frame-src': ("'self'", 'https://www.google.com', 'https://*.google.com', 'https://js.stripe.com'),
+        'img-src': ("'self'", 'data:', 'https://*.google.com', 'https://*.gstatic.com'),
+    },
+}

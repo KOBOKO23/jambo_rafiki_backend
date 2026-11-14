@@ -271,3 +271,30 @@ class GalleryAdminAPITest(APITestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertIn('image_url', response.data)
+
+class UploadedImageOptimisationTest(TestCase):
+    """New uploads are rotated upright, downscaled and stripped of EXIF/GPS metadata."""
+
+    def _phone_photo(self):
+        from PIL import Image
+        image = Image.new('RGB', (4000, 3000), 'orange')
+        exif = Image.Exif()
+        exif[0x0112] = 6  # orientation: rotate 90° clockwise to display
+        exif[0x8825] = {1: 'S', 2: (0.0, 31.0, 0.0)}  # GPS IFD
+        buffer = BytesIO()
+        image.save(buffer, format='JPEG', exif=exif)
+        return SimpleUploadedFile('phone.jpg', buffer.getvalue(), content_type='image/jpeg')
+
+    def test_new_upload_is_rotated_resized_and_metadata_free(self):
+        from PIL import Image
+        category = GalleryCategory.objects.create(name='Children', description='x')
+        photo = GalleryPhoto.objects.create(
+            title='Phone upload', image=self._phone_photo(), category=category,
+            date_taken=datetime.date(2026, 1, 1),
+        )
+        with Image.open(photo.image.path) as stored:
+            self.assertEqual(stored.size, (1500, 2000))  # portrait after rotation, capped at 2000px
+            exif = stored.getexif()
+            self.assertIsNone(exif.get(0x0112))
+            self.assertIsNone(exif.get(0x8825))
+        photo.image.delete(save=False)
