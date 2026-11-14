@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from core.image_processing import optimize_uploaded_image
 from django.utils import timezone
 from django.utils.text import slugify
 
@@ -162,6 +163,10 @@ class PageSection(models.Model):
         indexes = [
             models.Index(fields=['page', 'is_active', 'sort_order']),
         ]
+
+    def save(self, *args, **kwargs):
+        optimize_uploaded_image(self, 'image')
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f'{self.page.title} - {self.section_type}'

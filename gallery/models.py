@@ -1,6 +1,7 @@
 # gallery/models.py
 from django.db import models
 from django.utils.text import slugify
+from core.image_processing import optimize_uploaded_image
 
 class GalleryCategory(models.Model):
     name = models.CharField(max_length=100)
@@ -50,5 +51,9 @@ class GalleryPhoto(models.Model):
         verbose_name_plural = "Gallery Photos"
         ordering = ['-is_featured', '-date_taken', 'order']
     
+    def save(self, *args, **kwargs):
+        optimize_uploaded_image(self, 'image')
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return self.title

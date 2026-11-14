@@ -54,7 +54,11 @@ def organization_config_view(request):
             },
             'contact': {
                 'email': settings.ORGANIZATION_PUBLIC_EMAIL,
-                'call_redirect_url': '/api/contact/call/',
+                # A direct tel: link (the frontend renders it as-is); empty when no number is configured.
+                'call_redirect_url': (
+                    f'tel:{settings.ORGANIZATION_CALL_REDIRECT_NUMBER}'
+                    if settings.ORGANIZATION_CALL_REDIRECT_NUMBER else ''
+                ),
             },
             'bank_account': {
                 'bank_code': settings.ORGANIZATION_BANK_CODE,

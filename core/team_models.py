@@ -3,6 +3,7 @@ Team member models (Optional - for dynamic team management)
 Add to an appropriate app if needed
 """
 from django.db import models
+from core.image_processing import optimize_uploaded_image
 
 
 class TeamMember(models.Model):
@@ -38,6 +39,10 @@ class TeamMember(models.Model):
         verbose_name = 'Team Member'
         verbose_name_plural = 'Team Members'
     
+    def save(self, *args, **kwargs):
+        optimize_uploaded_image(self, 'photo')
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.name} - {self.title}"
     
